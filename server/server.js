@@ -13,10 +13,15 @@ const port = process.env.PORT;
 
 app.use(bodyParser.json());
 
+// Define cómo se manejan peticiones POST
 app.post('/todos', (request, response) => {
+
+    // Se crea el nuevo To-Do con la propiedad text definida en el cuerpo de la request
     var todo = new Todo({
         text: request.body.text
     })
+
+    // Guarda el documento en la base de datos
     todo.save().then((document) => {
         response.send(document);
     }, (error) => {
@@ -36,12 +41,16 @@ app.get('/todos', (request, response) => {
 });
 
 app.get('/todos/:id', (request, response) => {
+    // Obtiene la ID pasada en la URL
     var id = request.params.id;
+    // Verifica que sea un ID válido
     if (!ObjectID.isValid(id))
     {
         return response.status(404).send();
     }
+
     Todo.findById(id).then((todo) => {
+        // Verifica que exista un To-Do en la BD con ese ID
         if (!todo) {
             return response.status(404).send();
         }
@@ -95,6 +104,21 @@ app.patch('/todos/:id', (request, response) => {
         response.status(400).send();
     })
 });
+
+// Define cómo se manejan peticiones POST de User
+app.post('/users', (request, response) => {
+    var body = _.pick(request.body, ['email', 'password']);
+    var user = new User(body);
+    // Guarda el documento en la base de datos
+    user.save().then(() => {
+        return user.generateAuthToken();
+    }).then((token) => {
+        response.header('x-auth', token).send(user);
+    }).catch((error) => {
+        response.status(400).send(error);
+    })
+});
+
 
 app.listen(port, () => {
     console.log(`Started on port ${port}`);
