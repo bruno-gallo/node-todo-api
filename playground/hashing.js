@@ -7,13 +7,13 @@ var password = '123abc!';
 
 bcrypt.genSalt(10, (error, salt) => {
     bcrypt.hash(password, salt, (error, hash) => {
-        console.log(hash);
+        // console.log(hash);
     });
 });
 
 var hashedPassword = '$2a$10$23ILDAcHnk6au2r3sN0nweyB7VhGogrOUiZZiM.J6tBzDmbo9LUYG';
 
-bcrypt.compare(password, hashedPassword, (error, result) => {
+bcrypt.compare('123abcd!', hashedPassword, (error, result) => {
     console.log(result);
 });
 //
