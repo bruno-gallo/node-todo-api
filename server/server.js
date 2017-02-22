@@ -2,11 +2,13 @@ require('./config/config.js');
 const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
+const {ObjectID} = require('mongodb');
 
 var {mongoose} = require('./db/mongoose.js');
 var {Todo} = require('./models/todo.js');
 var {User} = require('./models/user.js');
-const {ObjectID} = require('mongodb');
+
+const {authenticate} = require('./middleware/authenticate.js');
 
 var app = express();
 const port = process.env.PORT;
@@ -117,6 +119,10 @@ app.post('/users', (request, response) => {
     }).catch((error) => {
         response.status(400).send(error);
     })
+});
+
+app.get('/users/me', authenticate, (request, response) => {
+    response.send(request.user);
 });
 
 
