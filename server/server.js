@@ -16,11 +16,12 @@ const port = process.env.PORT;
 app.use(bodyParser.json());
 
 // Define cómo se manejan peticiones POST
-app.post('/todos', (request, response) => {
+app.post('/todos', authenticate, (request, response) => {
 
     // Se crea el nuevo To-Do con la propiedad text definida en el cuerpo de la request
     var todo = new Todo({
-        text: request.body.text
+        text: request.body.text,
+        _creator: request.user._id
     })
 
     // Guarda el documento en la base de datos
@@ -31,8 +32,10 @@ app.post('/todos', (request, response) => {
     });
 });
 
-app.get('/todos', (request, response) => {
-    Todo.find().then((todos) => {
+app.get('/todos', authenticate,(request, response) => {
+    Todo.find({
+        _creator: request.user._id
+    }).then((todos) => {
         response.send(
             {
             todos
@@ -42,7 +45,7 @@ app.get('/todos', (request, response) => {
     });
 });
 
-app.get('/todos/:id', (request, response) => {
+app.get('/todos/:id', authenticate, (request, response) => {
     // Obtiene la ID pasada en la URL
     var id = request.params.id;
     // Verifica que sea un ID válido
@@ -51,7 +54,10 @@ app.get('/todos/:id', (request, response) => {
         return response.status(404).send();
     }
 
-    Todo.findById(id).then((todo) => {
+    Todo.findOne({
+        _id: id,
+        _creator: request.user._id
+        }).then((todo) => {
         // Verifica que exista un To-Do en la BD con ese ID
         if (!todo) {
             return response.status(404).send();
@@ -64,14 +70,17 @@ app.get('/todos/:id', (request, response) => {
     });
 });
 
-app.delete('/todos/:id', (request, response) => {
+app.delete('/todos/:id', authenticate,(request, response) => {
     var id = request.params.id;
     if (!ObjectID.isValid(id))
     {
         return response.status(404).send();
     }
 
-    Todo.findByIdAndRemove(id).then((todo) => {
+    Todo.findOneAndRemove({
+        _id: id,
+        _creator: request.user._id
+    }).then((todo) => {
         if (!todo) {
             return response.status(404).send();
         }
@@ -81,7 +90,7 @@ app.delete('/todos/:id', (request, response) => {
     });
 });
 
-app.patch('/todos/:id', (request, response) => {
+app.patch('/todos/:id', authenticate, (request, response) => {
     var id = request.params.id;
     // Especifica qué propiedades puede actualizar el usuario
     var body = _.pick(request.body, ['text', 'completed']);
@@ -97,7 +106,10 @@ app.patch('/todos/:id', (request, response) => {
         body.completedAt = null;
     }
     // Se actualiza el objeto
-    Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todo) => {
+    Todo.findOneAndUpdate({
+            _id: id,
+            _creator: request.user._id
+        }, {$set: body}, {new: true}).then((todo) => {
         if (!todo) {
             return response.status(404).send();
         }
